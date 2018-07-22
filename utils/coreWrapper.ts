@@ -42,6 +42,9 @@ export class CoreWrapper {
       { from, gas: DEFAULT_GAS },
     );
 
+    const receipt = await web3.eth.getTransactionReceipt(truffleTransferProxy.transactionHash);
+    console.log("Cost to deploy TransferProxy: ", receipt.gasUsed);
+
     const transferProxy = new TransferProxyContract(
       web3.eth.contract(truffleTransferProxy.abi).at(truffleTransferProxy.address),
       { from, gas: DEFAULT_GAS },
@@ -56,6 +59,9 @@ export class CoreWrapper {
     const truffleVault = await Vault.new(
       { from },
     );
+
+    const receipt = await web3.eth.getTransactionReceipt(truffleVault.transactionHash);
+    console.log("Cost to deploy Vault: ", receipt.gasUsed);
 
     return new VaultContract(
       web3.eth.contract(truffleVault.abi).at(truffleVault.address),
@@ -82,6 +88,9 @@ export class CoreWrapper {
     const truffleSetTokenFactory = await SetTokenFactory.new(
       { from },
     );
+
+    const receipt = await web3.eth.getTransactionReceipt(truffleSetTokenFactory.transactionHash);
+    console.log("Cost to deploy SetTokenFactory: ", receipt.gasUsed);
 
     return new SetTokenFactoryContract(
       web3.eth.contract(truffleSetTokenFactory.abi).at(truffleSetTokenFactory.address),
@@ -135,6 +144,9 @@ export class CoreWrapper {
     const truffleCore = await Core.new(
       { from },
     );
+
+    const receipt = await web3.eth.getTransactionReceipt(truffleCore.transactionHash);
+    console.log("Cost to deploy Core: ", receipt.gasUsed);
 
     return new CoreContract(
       web3.eth.contract(truffleCore.abi).at(truffleCore.address),

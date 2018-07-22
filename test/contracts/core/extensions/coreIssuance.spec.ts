@@ -15,9 +15,11 @@ import { SetTokenFactoryContract } from '../../../../types/generated/set_token_f
 import { StandardTokenMockContract } from '../../../../types/generated/standard_token_mock';
 import { TransferProxyContract } from '../../../../types/generated/transfer_proxy';
 import { VaultContract } from '../../../../types/generated/vault';
+import { SetMathContract } from '../../../../types/generated/set_math';
 
 // Artifacts
 const Core = artifacts.require('Core');
+const SetMath = artifacts.require('SetMath');
 
 // Core wrapper
 import { CoreWrapper } from '../../../../utils/coreWrapper';
@@ -74,6 +76,24 @@ contract('CoreIssuance', accounts => {
   });
 
   beforeEach(async () => {
+    const truffleMath = await SetMath.new(
+      { from: ownerAccount },
+    );
+
+    const setMath = new SetMathContract(
+      web3.eth.contract(truffleMath.abi).at(truffleMath.address),
+      { from: ownerAccount, gas: DEFAULT_GAS },
+    );
+
+    const result = await setMath.calculateTransferValue.callAsync(
+      new BigNumber(1),
+      new BigNumber(2),
+      new BigNumber(3)
+    );
+    console.log('Result: ', result);
+
+    await Core.link(truffleMath);
+
     core = await coreWrapper.deployCoreAsync();
     vault = await coreWrapper.deployVaultAsync();
     transferProxy = await coreWrapper.deployTransferProxyAsync();
@@ -118,7 +138,7 @@ contract('CoreIssuance', accounts => {
       );
     }
 
-    it('transfers the required tokens from the user', async () => {
+    it.only('transfers the required tokens from the user', async () => {
       const component: StandardTokenMockContract = _.first(components);
       const unit: BigNumber = _.first(componentUnits);
 

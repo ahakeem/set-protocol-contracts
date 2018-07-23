@@ -1,27 +1,28 @@
-import * as _ from "lodash";
+import * as _ from 'lodash';
 
-import { AuthorizableContract } from "../types/generated/authorizable";
-import { CoreContract } from "../types/generated/core";
-import { OrderLibraryMockContract } from "../types/generated/order_library_mock";
-import { SetTokenContract } from "../types/generated/set_token";
-import { SetTokenFactoryContract } from "../types/generated/set_token_factory";
-import { StandardTokenMockContract } from "../types/generated/standard_token_mock";
-import { TransferProxyContract } from "../types/generated/transfer_proxy";
-import { VaultContract } from "../types/generated/vault";
+import { AuthorizableContract } from '../types/generated/authorizable';
+import { CoreContract } from '../types/generated/core';
+import { OrderLibraryMockContract } from '../types/generated/order_library_mock';
+import { SetTokenContract } from '../types/generated/set_token';
+import { SetTokenFactoryContract } from '../types/generated/set_token_factory';
+import { StandardTokenMockContract } from '../types/generated/standard_token_mock';
+import { TransferProxyContract } from '../types/generated/transfer_proxy';
+import { VaultContract } from '../types/generated/vault';
 
-import { BigNumber } from "bignumber.js";
-import { Address } from "../types/common.js";
-import { DEFAULT_GAS, EXCHANGES } from "./constants";
-import { getFormattedLogsFromTxHash } from "./logs";
-import { extractNewSetTokenAddressFromLogs } from "./contract_logs/core";
+import { BigNumber } from 'bignumber.js';
+import { Address } from '../types/common.js';
+import { DEFAULT_GAS, EXCHANGES } from './constants';
+import { getFormattedLogsFromTxHash } from './logs';
+import { extractNewSetTokenAddressFromLogs } from './contract_logs/core';
 
-const Authorizable = artifacts.require("Authorizable");
-const Core = artifacts.require("Core");
-const OrderLibraryMock = artifacts.require("OrderLibraryMock");
-const TransferProxy = artifacts.require("TransferProxy");
-const SetTokenFactory = artifacts.require("SetTokenFactory");
-const Vault = artifacts.require("Vault");
-const SetToken = artifacts.require("SetToken");
+const Authorizable = artifacts.require('Authorizable');
+const Core = artifacts.require('Core');
+const OrderLibraryMock = artifacts.require('OrderLibraryMock');
+const TransferProxy = artifacts.require('TransferProxy');
+const SetTokenFactory = artifacts.require('SetTokenFactory');
+const Vault = artifacts.require('Vault');
+const SetToken = artifacts.require('SetToken');
+const SetMath = artifacts.require('SetMath');
 
 
 export class CoreWrapper {
@@ -43,7 +44,7 @@ export class CoreWrapper {
     );
 
     const receipt = await web3.eth.getTransactionReceipt(truffleTransferProxy.transactionHash);
-    console.log("Cost to deploy TransferProxy: ", receipt.gasUsed);
+    console.log('Cost to deploy TransferProxy: ', receipt.gasUsed);
 
     const transferProxy = new TransferProxyContract(
       web3.eth.contract(truffleTransferProxy.abi).at(truffleTransferProxy.address),
@@ -61,7 +62,7 @@ export class CoreWrapper {
     );
 
     const receipt = await web3.eth.getTransactionReceipt(truffleVault.transactionHash);
-    console.log("Cost to deploy Vault: ", receipt.gasUsed);
+    console.log('Cost to deploy Vault: ', receipt.gasUsed);
 
     return new VaultContract(
       web3.eth.contract(truffleVault.abi).at(truffleVault.address),
@@ -80,7 +81,7 @@ export class CoreWrapper {
       web3.eth.contract(truffleAuthorizable.abi).at(truffleAuthorizable.address),
       { from, gas: DEFAULT_GAS },
     );
-  };
+  }
 
   public async deploySetTokenFactoryAsync(
     from: Address = this._tokenOwnerAddress
@@ -90,7 +91,7 @@ export class CoreWrapper {
     );
 
     const receipt = await web3.eth.getTransactionReceipt(truffleSetTokenFactory.transactionHash);
-    console.log("Cost to deploy SetTokenFactory: ", receipt.gasUsed);
+    console.log('Cost to deploy SetTokenFactory: ', receipt.gasUsed);
 
     return new SetTokenFactoryContract(
       web3.eth.contract(truffleSetTokenFactory.abi).at(truffleSetTokenFactory.address),
@@ -116,8 +117,8 @@ export class CoreWrapper {
     componentAddresses: Address[],
     units: BigNumber[],
     naturalUnit: BigNumber,
-    name: string = "Set Token",
-    symbol: string = "SET",
+    name: string = 'Set Token',
+    symbol: string = 'SET',
     from: Address = this._tokenOwnerAddress
   ): Promise<SetTokenContract> {
     const truffleSetToken = await SetToken.new(
@@ -141,12 +142,18 @@ export class CoreWrapper {
   public async deployCoreAsync(
     from: Address = this._tokenOwnerAddress
   ): Promise<CoreContract> {
+    const truffleMath = await SetMath.new(
+      { from, gas: DEFAULT_GAS },
+    );
+
+    await Core.link('SetMath', truffleMath.address);
+
     const truffleCore = await Core.new(
       { from },
     );
 
     const receipt = await web3.eth.getTransactionReceipt(truffleCore.transactionHash);
-    console.log("Cost to deploy Core: ", receipt.gasUsed);
+    console.log('Cost to deploy Core: ', receipt.gasUsed);
 
     return new CoreContract(
       web3.eth.contract(truffleCore.abi).at(truffleCore.address),
@@ -229,10 +236,10 @@ export class CoreWrapper {
     vault: VaultContract,
     owner: Address
   ): Promise<BigNumber[]> {
-    const balancePromises = _.map(tokens, (token) => vault.balances.callAsync(token.address, owner));
+    const balancePromises = _.map(tokens, token => vault.balances.callAsync(token.address, owner));
 
     let balances: BigNumber[];
-    await Promise.all(balancePromises).then((fetchedTokenBalances) => {
+    await Promise.all(balancePromises).then(fetchedTokenBalances => {
       balances = fetchedTokenBalances;
     });
 
@@ -285,8 +292,8 @@ export class CoreWrapper {
     componentAddresses: Address[],
     units: BigNumber[],
     naturalUnit: BigNumber,
-    name: string = "Set Token",
-    symbol: string = "SET",
+    name: string = 'Set Token',
+    symbol: string = 'SET',
     from: Address = this._tokenOwnerAddress,
   ): Promise<SetTokenContract> {
     const txHash = await core.create.sendTransactionAsync(
@@ -367,7 +374,7 @@ export class CoreWrapper {
         _.map(
           indexes, (_, idx) => Math.pow(2, idx))
         )
-      )
+      );
   }
 
   /* ============ CoreExchangeDispatcher Extension ============ */
@@ -376,7 +383,7 @@ export class CoreWrapper {
      core: CoreContract,
      from: Address = this._contractOwnerAddress,
   ) {
-    const approvePromises = _.map(_.values(EXCHANGES), (exchangeId) =>
+    const approvePromises = _.map(_.values(EXCHANGES), exchangeId =>
       this.registerExchange(core, exchangeId, this._tokenOwnerAddress, from)
     );
     await Promise.all(approvePromises);
